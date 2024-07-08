@@ -3,8 +3,8 @@ package main
 import (
     "fmt"
     "net/http"
-    
-    "github.com/jospehthejoe/webservertesting/internal/handlers/bird_handler"
+
+    "github.com/jospehthejoe/webservertesting/internal/handlers"
     "github.com/gorilla/mux"
 
 )

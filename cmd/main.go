@@ -7,22 +7,20 @@ import (
     "net/http"
     "strings"
 
-    "golang.org/x/crypto/bcrypt"
     "github.com/gorilla/mux"
     _ "github.com/mattn/go-sqlite3"
 )
 
 // Data structure for the greeting template
-type GreetingData struct {
-    Name string
-}
+//type HostData struct {
+//    Name string
+//}
+/// Database initialization function
 
-// Data structure for the login template
-type LoginData struct {
+type AddHostData struct {
     Message string
 }
 
-// Database initialization function
 func initDB() (*sql.DB, error) {
     db, err := sql.Open("sqlite3", "./webapp.db")
     if err != nil {
@@ -30,11 +28,17 @@ func initDB() (*sql.DB, error) {
     }
 
     // Create the users table if it doesn't exist
-    _, err = db.Exec(`
-        CREATE TABLE IF NOT EXISTS users (
+        _, err = db.Exec(`CREATE TABLE IF NOT EXISTS hosts (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT NOT NULL UNIQUE,
-            password TEXT NOT NULL
+            hostname TEXT NOT NULL UNIQUE,
+            mac TEXT,
+            ipv4 TEXT,
+            ipv6 TEXT,
+            domain TEXT,
+            status TEXT,
+            vlan TEXT,
+            cnames TEXT,
+            notes TEXT
         )
     `)
     if err != nil {
@@ -45,50 +49,17 @@ func initDB() (*sql.DB, error) {
 }
 
 // Function to insert a user into the database
-func insertUser(db *sql.DB, username, password string) error {
-    // Hash the password before storing it in the database
-    hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-    if err != nil {
-        return err
-    }
-
-    _, err = db.Exec("INSERT INTO users (username, password) VALUES (?, ?)", username, hashedPassword)
+func insertHost(db *sql.DB, hostname, mac, ipv4, ipv6, domain, status, vlan, cnames, notes string) error {
+    _, err := db.Exec("INSERT INTO hosts (hostname, mac, ipv4, ipv6, domain, status, vlan, cnames, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", hostname, mac, ipv4, ipv6, domain, status, vlan, cnames, notes)
     return err
 }
 
-// Function to query all users from the database
-func queryUsers(db *sql.DB) ([]string, error) {
-    rows, err := db.Query("SELECT name FROM users")
-    if err != nil {
-        return nil, err
-    }
-    defer rows.Close()
+// Function to insert a user into the database
+//func insertHost(db *sql.DB, error) {
+//    rows, err := db.Query("SELECT * FROM hosts")
+//}
 
-    var names []string
-    for rows.Next() {
-        var name string
-        if err := rows.Scan(&name); err != nil {
-            return nil, err
-        }
-        names = append(names, name)
-    }
-
-    return names, nil
-}
-
-// Function to verify login credentials
-func verifyLogin(db *sql.DB, username, password string) bool {
-    // Retrieve the hashed password from the database
-    var hashedPassword string
-    err := db.QueryRow("SELECT password FROM users WHERE username = ?", username).Scan(&hashedPassword)
-    if err != nil {
-        return false
-    }
-
-    // Compare the provided password with the hashed password
-    err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
-    return err == nil
-}
+//func queryAllHosts(db *sql.DB, hostname, mac, ipv4, ipv6, domain, status, vlan, cnames, notes string) error {
 
 func main() {
     // Initialize the database
@@ -119,53 +90,8 @@ func main() {
         }
     }
 
-    // Define a handler function for the greeting page
-    greetHandler := func(w http.ResponseWriter, r *http.Request) {
-        // Get the "name" query parameter from the URL
-        name := r.URL.Query().Get("name")
-
-        // If the name is empty, set a default name
-        if name == "" {
-            name = "Guest"
-        }
-
-        // Insert the user into the database
-        err := insertUser(db, name, "password") // Default password for demonstration
-        if err != nil {
-            http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-            return
-        }
-
-        // Query all users from the database
-        users, err := queryUsers(db)
-        if err != nil {
-            http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-            return
-        }
-
-        // Create a GreetingData instance
-        data := GreetingData{Name: name}
-
-        // Parse the HTML template
-        tmpl, err := template.ParseFiles("./web/templates/greeting.html")
-        if err != nil {
-            http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-            return
-        }
-
-        // Execute the template with the data
-        err = tmpl.Execute(w, struct {
-            GreetingData
-            Users []string
-        }{data, users})
-        if err != nil {
-            http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-            return
-        }
-    }
-
-    // Define a handler function for the login page
-    loginHandler := func(w http.ResponseWriter, r *http.Request) {
+    // Define a handler function for the addhost page
+    addHostHandler := func(w http.ResponseWriter, r *http.Request) {
         // Check if the request is a POST request
         if r.Method == http.MethodPost {
             // Parse the form data
@@ -176,34 +102,23 @@ func main() {
             }
 
             // Get the username and password from the form
-            username := strings.TrimSpace(r.Form.Get("username"))
-            password := r.Form.Get("password")
+            hostname := strings.TrimSpace(r.Form.Get("hostname"))
+            mac := strings.TrimSpace(r.Form.Get("mac"))
+            ipv4 := strings.TrimSpace(r.Form.Get("ipv4"))
+            ipv6 := strings.TrimSpace(r.Form.Get("ipv6"))
+            domain := strings.TrimSpace(r.Form.Get("domain"))
+            status := strings.TrimSpace(r.Form.Get("status"))
+            vlan := strings.TrimSpace(r.Form.Get("vlan"))
+            cnames := strings.TrimSpace(r.Form.Get("cnames"))
+            notes := strings.TrimSpace(r.Form.Get("notes"))
 
-            // Verify login credentials
-            if verifyLogin(db, username, password) {
-                // Redirect to the greeting page with the username as a query parameter
-                http.Redirect(w, r, "/greet?name="+username, http.StatusFound)
-                return
-            }
+            insertHost(db, hostname, mac, ipv4, ipv6, domain, status, vlan, cnames, notes)
+            http.Redirect(w, r, "/hostlist", http.StatusFound)
 
-            // Display an error message on the login page
-            tmpl, err := template.ParseFiles("./web/templates/login.html")
-            if err != nil {
-                http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-                return
-            }
-
-            // Execute the template with the error message
-            err = tmpl.Execute(w, LoginData{Message: "Invalid username or password"})
-            if err != nil {
-                http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-                return
-            }
-            return
         }
 
-        // Parse the HTML template for the login page
-        tmpl, err := template.ParseFiles("./web/templates/login.html")
+        // Parse the HTML template
+        tmpl, err := template.ParseFiles("./web/templates/addhost.html")
         if err != nil {
             http.Error(w, "Internal Server Error", http.StatusInternalServerError)
             return
@@ -217,10 +132,26 @@ func main() {
         }
     }
 
+    // Define a handler function for the host list page
+    hostListHandler := func(w http.ResponseWriter, r *http.Request) {
+        // Parse the HTML template
+        tmpl, err := template.ParseFiles("./web/templates/hostlist.html")
+        if err != nil {
+            http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+            return
+        }
+
+        // Execute the template
+        err = tmpl.Execute(w, nil)
+        if err != nil {
+            http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+            return
+        }
+    }
     // Register the handlers for the home, greet, and login pages
     router.HandleFunc("/", homeHandler).Methods(http.MethodGet)
-    router.HandleFunc("/greet", greetHandler).Methods(http.MethodGet)
-    router.HandleFunc("/login", loginHandler).Methods(http.MethodGet, http.MethodPost)
+    router.HandleFunc("/hostlist", hostListHandler).Methods(http.MethodGet)
+    router.HandleFunc("/addhost", addHostHandler).Methods(http.MethodGet, http.MethodPost)
 
     // Serve static files from the "static" directory
     router.PathPrefix("./web/static/").Handler(http.StripPrefix("./web/static/", http.FileServer(http.Dir("static"))))

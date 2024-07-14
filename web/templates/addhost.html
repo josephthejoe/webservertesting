@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+</head>
+<body>
+    <h1>Add a Host</h1>
+    <p><a href="/">Back to Home</a></p>
+    <form method="post" action="/addhost">
+        <label for="hostname">Hostname:</label>
+        <input type="text" id="hostname" name="hostname" required><br>
+        <label for="mac">MAC:</label>
+        <input type="text" id="mac" name="mac" required><br>
+        <label for="ipv4">IPv4:</label>
+        <input type="text" id="ipv4" name="ipv4" required><br>
+        <label for="ipv6">IPv6:</label>
+        <input type="text" id="ipv6" name="ipv6" required><br>
+        <label for="domain">Domain:</label>
+        <input type="text" id="domain" name="domain" required><br>
+        <label for="status">Status:</label>
+        <input type="text" id="status" name="status" required><br>
+        <label for="vlan">VLAN:</label>
+        <input type="text" id="vlan" name="vlan" required><br>
+        <label for="cnames">CNAMES:</label>
+        <input type="text" id="cnames" name="cnames" required><br>
+        <label for="notes">Notes:</label>
+        <input type="text" id="notes" name="notes" required><br>
+        <button type="submit">Add Host!</button>
+    </form>
+</body>
+</html>

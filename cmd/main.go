@@ -6,6 +6,7 @@ import (
     "html/template"
     "net/http"
     "strings"
+    "log"
 
     "github.com/gorilla/mux"
     _ "github.com/mattn/go-sqlite3"
@@ -19,6 +20,19 @@ import (
 
 type AddHostData struct {
     Message string
+}
+
+type hostData struct {
+    id int
+    hostname string
+    mac string
+    ipv4 string
+    ipv6 string
+    domain string
+    status string
+    vlan string
+    cnames string
+    notes string
 }
 
 func initDB() (*sql.DB, error) {
@@ -55,11 +69,26 @@ func insertHost(db *sql.DB, hostname, mac, ipv4, ipv6, domain, status, vlan, cna
 }
 
 // Function to insert a user into the database
-//func insertHost(db *sql.DB, error) {
-//    rows, err := db.Query("SELECT * FROM hosts")
-//}
+func queryAllHosts(db *sql.DB) []hostData {
+    var hostList []hostData
 
-//func queryAllHosts(db *sql.DB, hostname, mac, ipv4, ipv6, domain, status, vlan, cnames, notes string) error {
+    rows, err := db.Query("SELECT * FROM hosts")
+    if err != nil {
+        log.Println(err)
+    }
+    defer rows.Close()
+
+    for rows.Next() {
+        var host hostData
+        err := rows.Scan(&host.id, &host.hostname, &host.mac, &host.ipv4, &host.ipv6, &host.domain, &host.status, &host.vlan, &host.cnames, &host.notes)
+        if err != nil {
+            log.Println(err)
+        }
+    hostList = append(hostList, host)
+    }
+    return hostList
+}
+
 
 func main() {
     // Initialize the database
@@ -134,6 +163,9 @@ func main() {
 
     // Define a handler function for the host list page
     hostListHandler := func(w http.ResponseWriter, r *http.Request) {
+        list := queryAllHosts(db) 
+        fmt.Println(list)
+
         // Parse the HTML template
         tmpl, err := template.ParseFiles("./web/templates/hostlist.html")
         if err != nil {

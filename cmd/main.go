@@ -18,21 +18,26 @@ import (
 //}
 /// Database initialization function
 
+type LoginData struct {
+    Message string
+    Test string
+}
+
 type AddHostData struct {
     Message string
 }
 
-type hostData struct {
-    id int
-    hostname string
-    mac string
-    ipv4 string
-    ipv6 string
-    domain string
-    status string
-    vlan string
-    cnames string
-    notes string
+type HostData struct {
+    Id int
+    Hostname string
+    Mac string
+    Ipv4 string
+    Ipv6 string
+    Domain string
+    Status string
+    Vlan string
+    Cnames string
+    Notes string
 }
 
 func initDB() (*sql.DB, error) {
@@ -69,8 +74,8 @@ func insertHost(db *sql.DB, hostname, mac, ipv4, ipv6, domain, status, vlan, cna
 }
 
 // Function to insert a user into the database
-func queryAllHosts(db *sql.DB) []hostData {
-    var hostList []hostData
+func queryAllHosts(db *sql.DB) []HostData {
+    var hostList []HostData
 
     rows, err := db.Query("SELECT * FROM hosts")
     if err != nil {
@@ -79,8 +84,8 @@ func queryAllHosts(db *sql.DB) []hostData {
     defer rows.Close()
 
     for rows.Next() {
-        var host hostData
-        err := rows.Scan(&host.id, &host.hostname, &host.mac, &host.ipv4, &host.ipv6, &host.domain, &host.status, &host.vlan, &host.cnames, &host.notes)
+        var host HostData
+        err := rows.Scan(&host.Id, &host.Hostname, &host.Mac, &host.Ipv4, &host.Ipv6, &host.Domain, &host.Status, &host.Vlan, &host.Cnames, &host.Notes)
         if err != nil {
             log.Println(err)
         }
@@ -163,10 +168,8 @@ func main() {
 
     // Define a handler function for the host list page
     hostListHandler := func(w http.ResponseWriter, r *http.Request) {
-        list := queryAllHosts(db) 
-        fmt.Println(list)
+          List := queryAllHosts(db)
 
-        // Parse the HTML template
         tmpl, err := template.ParseFiles("./web/templates/hostlist.html")
         if err != nil {
             http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -174,7 +177,7 @@ func main() {
         }
 
         // Execute the template
-        err = tmpl.Execute(w, nil)
+        err = tmpl.Execute(w, List)
         if err != nil {
             http.Error(w, "Internal Server Error", http.StatusInternalServerError)
             return

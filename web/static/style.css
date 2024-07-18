@@ -6,3 +6,6 @@ body {
 h1 {
     color: #007bff;
 }
+table, th, td {
+  border:1px solid black;
+}

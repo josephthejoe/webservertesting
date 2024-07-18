@@ -1,5 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
+<style>
+table, th, td {
+  border:1px solid black;
+}
+</style>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +13,27 @@
 <body>
     <p><a href="/">Back to Home</a></p>
     <h1>hostname list:</h1>
-    
+    <table style="border:1px solid black" >
+        <tr>
+            <th>Hostname</th>
+            <th>MAC</th>
+            <th>IPv4</th>
+            <th>IPv6</th>
+            <th>Domain</th>
+            <th>VLAN</th>
+            <th>CNAMES</th>
+            <th>Notes</th>
+        </tr>
+        <tr>{{range .}}
+            <td>{{.Hostname }}</td>
+            <td>{{.Mac }}</td>
+            <td>{{.Ipv4 }}</td>
+            <td>{{.Ipv6 }}</td>
+            <td>{{.Domain }}</td>
+            <td>{{.Vlan }}</td>
+            <td>{{.Cnames }}</td>
+            <td>{{.Notes }}</td>
+        <tr>{{end}}
+    </table>
 </body>
 </html>
